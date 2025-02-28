@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.*
 import com.google.ai.client.generativeai.*
+import fr.isen.delcasse.isensmartcompanion.data.AppDatabase
 import fr.isen.delcasse.isensmartcompanion.ui.theme.ISENSmartCompanionTheme
 import retrofit2.Call
 import retrofit2.http.GET
@@ -30,10 +31,16 @@ class MainActivity : ComponentActivity() {
         setContent {
             ISENSmartCompanionTheme {
                 val navController = rememberNavController()
+                val database = AppDatabase.getDatabase(applicationContext)
+                val interactionDao = database.interactionDao()
                 Scaffold(
                     bottomBar = { BottomNavigationBar(navController) }
                 ) { innerPadding ->
-                    NavigationGraph(navController, Modifier.padding(innerPadding))
+                    NavigationGraph(
+                        navController,
+                        Modifier.padding(innerPadding),
+                        interactionDao = interactionDao
+                    )
                 }
             }
         }
@@ -45,4 +52,3 @@ interface RetrofitService {
     @GET("events.json")
     fun getEvents(): Call<List<Event>>
 }
-

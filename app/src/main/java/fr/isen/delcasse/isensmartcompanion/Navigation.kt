@@ -10,6 +10,9 @@ import androidx.navigation.compose.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalContext
+import fr.isen.delcasse.isensmartcompanion.data.AppDatabase
+import fr.isen.delcasse.isensmartcompanion.data.InteractionDao
 
 @Composable
 fun BottomNavigationBar(navController: NavHostController) {
@@ -35,10 +38,16 @@ fun BottomNavigationBar(navController: NavHostController) {
 }
 
 @Composable
-fun NavigationGraph(navController: NavHostController, modifier: Modifier) {
+fun NavigationGraph(
+    navController: NavHostController,
+    modifier: Modifier,
+    interactionDao: InteractionDao // Ajout du paramètre manquant
+) {
     NavHost(navController, startDestination = "home", modifier = modifier) {
-        composable("home") { MainScreen() }
+        composable("home") { AssistantUI(interactionDao = interactionDao) }
         composable("events") { EventsScreen(navController) }
-        composable("history") { HistoryScreen() }
+        composable("history") { HistoryScreen(interactionDao) } // Passe bien interactionDao ici
     }
 }
+
+

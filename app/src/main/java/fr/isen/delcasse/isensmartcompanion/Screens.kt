@@ -1,6 +1,5 @@
 package fr.isen.delcasse.isensmartcompanion
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,24 +17,26 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.ai.client.generativeai.GenerativeModel
+import fr.isen.delcasse.isensmartcompanion.data.Interaction
+import fr.isen.delcasse.isensmartcompanion.data.InteractionDao
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun MainScreen() {
-    AssistantUI()
+fun MainScreen(interactionDao: InteractionDao) {
+    AssistantUI(interactionDao)
 }
 
 @Composable
-fun AssistantUI() {
+fun AssistantUI(interactionDao: InteractionDao) {
     val context = LocalContext.current
     var userInput by remember { mutableStateOf(TextFieldValue("")) }
-    val messages = remember { mutableStateListOf<Pair<String, String>>() }
+    val viewModel = remember { HistoryViewModel(interactionDao) }
+    val history by viewModel.history.collectAsState()
 
-    // 🔥 Configuration du modèle Gemini AI
-    val apiKey = "AIzaSyDyrL1QqsgY6zBBR7Wb3Gl_0E1onoY1tc4" // Remplace par ta clé API Google AI
+    val apiKey = "AIzaSyDyrL1QqsgY6zBBR7Wb3Gl_0E1onoY1tc4" // Ta clé API Google AI
     val generativeModel = GenerativeModel(
         modelName = "gemini-1.5-flash",
         apiKey = apiKey
@@ -49,17 +50,8 @@ fun AssistantUI() {
     ) {
         Spacer(modifier = Modifier.height(60.dp))
 
-        Text(
-            text = "ISEN",
-            fontSize = 60.sp,
-            color = Color.Red
-        )
-
-        Text(
-            text = "Smart Companion",
-            fontSize = 20.sp,
-            color = Color.Black
-        )
+        Text(text = "ISEN", fontSize = 60.sp, color = Color.Red)
+        Text(text = "Smart Companion", fontSize = 20.sp, color = Color.Black)
 
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -67,8 +59,8 @@ fun AssistantUI() {
             modifier = Modifier.weight(1f),
             reverseLayout = true
         ) {
-            items(messages.reversed()) { (question, answer) ->
-                MessageBubble(question, answer)
+            items(history.reversed()) { interaction ->
+                MessageBubble(interaction.sender, interaction.message)
             }
         }
 
@@ -90,15 +82,14 @@ fun AssistantUI() {
                 onClick = {
                     if (userInput.text.isNotEmpty()) {
                         val question = userInput.text
-                        messages.add(question to "⏳ Chargement...")
+                        viewModel.addInteraction(Interaction(sender = "User", message = question))
                         userInput = TextFieldValue("")
 
-                        // 🔥 Appel à l'API Gemini AI
-                        getGeminiResponse(generativeModel, question) { response ->
-                            if (messages.isNotEmpty()) { // Vérification avant suppression
-                                messages.removeAt(messages.size - 1) // Supprime le message "⏳ Chargement..."
+                        CoroutineScope(Dispatchers.IO).launch {
+                            getGeminiResponse(generativeModel, question) { response ->
+                                viewModel.addInteraction(Interaction(sender = "AI", message = response))
+
                             }
-                            messages.add(question to response)
                         }
                     }
                 },
@@ -106,24 +97,19 @@ fun AssistantUI() {
                     .size(50.dp)
                     .background(Color.Red, shape = CircleShape)
             ) {
-                Icon(
-                    imageVector = Icons.Filled.ArrowForward,
-                    contentDescription = "Envoyer",
-                    tint = Color.White
-                )
+                Icon(Icons.Filled.ArrowForward, contentDescription = "Envoyer", tint = Color.White)
             }
         }
     }
 }
 
-// ✅ Fonction qui envoie la requête à Gemini AI
 fun getGeminiResponse(model: GenerativeModel, input: String, onResult: (String) -> Unit) {
     CoroutineScope(Dispatchers.IO).launch {
         try {
-            val response = model.generateContent(input) // Exécute dans une coroutine
+            val response = model.generateContent(input)
             val textResponse = response.text ?: "Erreur lors de la récupération de la réponse."
 
-            withContext(Dispatchers.Main) { // Retourne sur le thread principal pour mettre à jour l'UI
+            withContext(Dispatchers.Main) {
                 onResult(textResponse)
             }
         } catch (e: Exception) {
@@ -135,23 +121,13 @@ fun getGeminiResponse(model: GenerativeModel, input: String, onResult: (String) 
 }
 
 @Composable
-fun MessageBubble(question: String, answer: String) {
+fun MessageBubble(sender: String, message: String) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
     ) {
-        Text(
-            text = "👤 $question",
-            fontSize = 16.sp,
-            color = Color.Blue,
-            modifier = Modifier.padding(4.dp)
-        )
-        Text(
-            text = "🤖 $answer",
-            fontSize = 16.sp,
-            color = Color.DarkGray,
-            modifier = Modifier.padding(4.dp)
-        )
+        Text(text = "👤 $sender", fontSize = 16.sp, color = Color.Blue)
+        Text(text = "🤖 $message", fontSize = 16.sp, color = Color.DarkGray)
     }
 }
