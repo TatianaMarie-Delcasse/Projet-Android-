@@ -4,6 +4,9 @@
 
     <!-- Permission pour accéder à Internet (utile si tu utilises Retrofit pour les requêtes réseau) -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
 
     <application
         android:allowBackup="true"
@@ -32,6 +35,14 @@
         <activity
             android:name=".EventDetailActivity"
             android:label="Détails de l'événement" /> <!-- Label pour l'activité, tu peux le personnaliser -->
+
+        <receiver android:name="androidx.work.impl.utils.ForceStopRunnable$BroadcastReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
 
     </application>
 

@@ -141,12 +141,12 @@ fun EventItem(event: Event, onClick: () -> Unit) {
     }
 }
 
-@Composable
-fun HistoryScreen() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(text = "Historique des événements", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-    }
-}
+//@Composable
+//fun HistoryScreen() {
+    //Box(
+        //modifier = Modifier.fillMaxSize(),
+        //contentAlignment = Alignment.Center
+    //) {
+        //Text(text = "Historique des événements", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+    //}
+//}

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.*
@@ -36,7 +37,7 @@ fun AssistantUI(interactionDao: InteractionDao) {
     val viewModel = remember { HistoryViewModel(interactionDao) }
     val history by viewModel.history.collectAsState()
 
-    val apiKey = "AIzaSyDyrL1QqsgY6zBBR7Wb3Gl_0E1onoY1tc4" // Ta clé API Google AI
+    val apiKey = "AIzaSyDyrL1QqsgY6zBBR7Wb3Gl_0E1onoY1tc4"
     val generativeModel = GenerativeModel(
         modelName = "gemini-1.5-flash",
         apiKey = apiKey
@@ -59,8 +60,10 @@ fun AssistantUI(interactionDao: InteractionDao) {
             modifier = Modifier.weight(1f),
             reverseLayout = true
         ) {
-            items(history.reversed()) { interaction ->
-                MessageBubble(interaction.sender, interaction.message)
+            items(history.reversed().chunked(2)) { messages ->
+                if (messages.size == 2) {
+                    MessageCard(messages[0], messages[1])
+                }
             }
         }
 
@@ -88,7 +91,6 @@ fun AssistantUI(interactionDao: InteractionDao) {
                         CoroutineScope(Dispatchers.IO).launch {
                             getGeminiResponse(generativeModel, question) { response ->
                                 viewModel.addInteraction(Interaction(sender = "AI", message = response))
-
                             }
                         }
                     }
@@ -121,13 +123,20 @@ fun getGeminiResponse(model: GenerativeModel, input: String, onResult: (String) 
 }
 
 @Composable
-fun MessageBubble(sender: String, message: String) {
-    Column(
+fun MessageCard(question: Interaction, response: Interaction) {
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
+            .padding(8.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFE1D9D8))
     ) {
-        Text(text = "👤 $sender", fontSize = 16.sp, color = Color.Blue)
-        Text(text = "🤖 $message", fontSize = 16.sp, color = Color.DarkGray)
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = "👤 ${question.sender}", fontSize = 16.sp, color = Color.Blue)
+            Text(text = question.message, fontSize = 16.sp, color = Color.DarkGray)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = "🤖 ${response.sender}", fontSize = 16.sp, color = Color.Blue)
+            Text(text = response.message, fontSize = 16.sp, color = Color.DarkGray)
+        }
     }
 }

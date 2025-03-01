@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -21,7 +22,6 @@ import java.util.Date
 fun HistoryScreen(interactionDao: InteractionDao) {
     val viewModel = remember { HistoryViewModel(interactionDao) }
     val history by viewModel.history.collectAsState()
-
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text(
@@ -42,30 +42,44 @@ fun HistoryScreen(interactionDao: InteractionDao) {
         Spacer(modifier = Modifier.height(16.dp))
 
         LazyColumn {
-            items(history) { interaction: Interaction ->
-                HistoryItem(interaction, onDelete = { viewModel.deleteInteraction(interaction) })
+            items(history.chunked(2)) { interactionPair ->
+                if (interactionPair.size == 2) {
+                    HistoryItem(interactionPair[0], interactionPair[1], onDelete = {
+                        viewModel.deleteInteraction(interactionPair[0])
+                        viewModel.deleteInteraction(interactionPair[1])
+                    })
+                }
             }
         }
     }
 }
 
-
 @Composable
-fun HistoryItem(interaction: Interaction, onDelete: () -> Unit)
-{
+fun HistoryItem(userInteraction: Interaction, aiInteraction: Interaction, onDelete: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFBB86FC))
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xDDEC6941))
     ) {
         Column(modifier = Modifier.padding(8.dp)) {
-            Text(text = "👤 ${interaction.sender}", fontWeight = FontWeight.Bold)
-            Text(text = "🤖 ${interaction.message}", color = Color.Gray)
+            Text(text = "👤 ${userInteraction.sender}", fontWeight = FontWeight.Bold)
+            Text(text = userInteraction.message, color = Color.Black)
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(text = "🤖 ${aiInteraction.sender}", fontWeight = FontWeight.Bold)
+            Text(text = aiInteraction.message, color = Color.Black)
+            Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = "📅 ${SimpleDateFormat("dd/MM/yyyy HH:mm").format(Date(interaction.timestamp))}",
+                text = "📅 ${SimpleDateFormat("dd/MM/yyyy HH:mm").format(Date(userInteraction.timestamp))}",
                 fontSize = 12.sp
             )
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Supprimer")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                IconButton(onClick = onDelete) {
+                    Icon(Icons.Default.Delete, contentDescription = "Supprimer")
+                }
             }
         }
     }
