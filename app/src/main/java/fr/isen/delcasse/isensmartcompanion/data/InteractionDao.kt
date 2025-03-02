@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface InteractionDao {
     @Query("SELECT * FROM interaction_table")
-    fun getAll(): List<Interaction>
+    fun getAll(): Flow<List<Interaction>>
 
     @Query("SELECT * FROM interaction_table ORDER BY timestamp DESC")
     fun getAllInteractions(): Flow<List<Interaction>>
@@ -24,4 +24,8 @@ interface InteractionDao {
 
     @Query("DELETE FROM interaction_table")
     fun clearAll()
+
+    @Query("SELECT COUNT(*) FROM interaction_table WHERE message LIKE '%' || :eventTitle || '%'")
+    fun countInteraction(eventTitle: String): Int
+
 }

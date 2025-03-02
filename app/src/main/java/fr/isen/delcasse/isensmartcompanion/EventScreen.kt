@@ -2,6 +2,7 @@ package fr.isen.delcasse.isensmartcompanion
 
 import android.content.Intent
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,6 +22,9 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import fr.isen.delcasse.isensmartcompanion.RetrofitInstance
+import fr.isen.delcasse.isensmartcompanion.data.AppDatabase
+import fr.isen.delcasse.isensmartcompanion.data.Interaction
+import kotlinx.coroutines.runBlocking
 import retrofit2.http.GET
 
 
@@ -118,35 +122,32 @@ fun EventsScreen(navController: NavHostController) {
 
 
 @Composable
-fun EventItem(event: Event, onClick: () -> Unit) {
+fun EventItem(event: Event, db: AppDatabase) {
+    val context = LocalContext.current
+    val interactionDao = db.interactionDao()
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = Color(0xEDFF5722)),
-        shape = MaterialTheme.shapes.medium,
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            .clickable {
+                val interaction = Interaction(
+                    sender = "User",
+                    message = "Rappel activé pour ${event.title}"
+                )
+                runBlocking {
+                    interactionDao.insertInteraction(interaction)
+                }
+                Toast.makeText(context, "Rappel activé", Toast.LENGTH_SHORT).show()
+            },
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFF9800))
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = event.title, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            }
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = event.title, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text(text = "Date : ${event.date}", color = Color.DarkGray)
+            Text(text = "Lieu : ${event.location}", color = Color.Gray)
         }
     }
 }
 
-//@Composable
-//fun HistoryScreen() {
-    //Box(
-        //modifier = Modifier.fillMaxSize(),
-        //contentAlignment = Alignment.Center
-    //) {
-        //Text(text = "Historique des événements", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-    //}
-//}
+
