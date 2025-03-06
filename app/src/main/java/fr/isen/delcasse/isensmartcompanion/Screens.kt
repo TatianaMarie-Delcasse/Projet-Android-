@@ -91,7 +91,7 @@ fun AssistantUI(interactionDao: InteractionDao) {
                         viewModel.addInteraction(userInteraction)
                         userInput = TextFieldValue("")
 
-         *               CoroutineScope(Dispatchers.IO).launch {
+                        CoroutineScope(Dispatchers.IO).launch {
                             getGeminiResponse(generativeModel, question) { response ->
                                 val aiInteraction = Interaction(sender = "AI", message = response)
                                 sessionMessages = sessionMessages + aiInteraction
@@ -118,7 +118,7 @@ fun AssistantUI(interactionDao: InteractionDao) {
             modifier = Modifier.padding(16.dp)
         ) {
             Text("Effacer la conversation", color = Color.White)
-       ** }
+       }
     }
 }
 
