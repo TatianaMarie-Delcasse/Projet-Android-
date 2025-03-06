@@ -37,6 +37,8 @@ fun AssistantUI(interactionDao: InteractionDao) {
     val viewModel = remember { HistoryViewModel(interactionDao) }
     val history by viewModel.history.collectAsState()
 
+    var sessionMessages by remember { mutableStateOf<List<Interaction>>(emptyList()) }
+
     val apiKey = "AIzaSyDyrL1QqsgY6zBBR7Wb3Gl_0E1onoY1tc4"
     val generativeModel = GenerativeModel(
         modelName = "gemini-1.5-flash",
@@ -57,10 +59,9 @@ fun AssistantUI(interactionDao: InteractionDao) {
         Spacer(modifier = Modifier.height(20.dp))
 
         LazyColumn(
-            modifier = Modifier.weight(1f),
-            reverseLayout = true
+            modifier = Modifier.weight(1f)
         ) {
-            items(history.reversed().chunked(2)) { messages ->
+            items(sessionMessages.chunked(2)) { messages ->
                 if (messages.size == 2) {
                     MessageCard(messages[0], messages[1])
                 }
@@ -85,12 +86,16 @@ fun AssistantUI(interactionDao: InteractionDao) {
                 onClick = {
                     if (userInput.text.isNotEmpty()) {
                         val question = userInput.text
-                        viewModel.addInteraction(Interaction(sender = "User", message = question))
+                        val userInteraction = Interaction(sender = "User", message = question)
+                        sessionMessages = sessionMessages + userInteraction
+                        viewModel.addInteraction(userInteraction)
                         userInput = TextFieldValue("")
 
-                        CoroutineScope(Dispatchers.IO).launch {
+         *               CoroutineScope(Dispatchers.IO).launch {
                             getGeminiResponse(generativeModel, question) { response ->
-                                viewModel.addInteraction(Interaction(sender = "AI", message = response))
+                                val aiInteraction = Interaction(sender = "AI", message = response)
+                                sessionMessages = sessionMessages + aiInteraction
+                                viewModel.addInteraction(aiInteraction)
                             }
                         }
                     }
@@ -102,6 +107,18 @@ fun AssistantUI(interactionDao: InteractionDao) {
                 Icon(Icons.Filled.ArrowForward, contentDescription = "Envoyer", tint = Color.White)
             }
         }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Button(
+           onClick = {
+                sessionMessages = emptyList() // Vide uniquement les messages de la session actuelle
+            },
+            colors = ButtonDefaults.buttonColors(Color.Red),
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text("Effacer la conversation", color = Color.White)
+       ** }
     }
 }
 
