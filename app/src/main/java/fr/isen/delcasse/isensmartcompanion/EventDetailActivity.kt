@@ -21,6 +21,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -85,37 +86,50 @@ fun EventDetailScreen(event: Event, activity: EventDetailActivity) {
     val prefs = context.getSharedPreferences("event_prefs", Context.MODE_PRIVATE)
     var isReminderSet by remember { mutableStateOf(prefs.getBoolean(event.id, false)) }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        // Header section with back button and reminder icon
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Button(onClick = { activity.finish() }) {
+            Button(
+                onClick = { activity.finish() },
+                colors = ButtonDefaults.buttonColors(Color(0xFF4CAF50)),
+                modifier = Modifier.padding(8.dp)
+            ) {
                 Icon(Icons.Filled.ArrowBack, contentDescription = "Retour")
-                Text("Retour")
+                Text("Retour", fontSize = 16.sp)
             }
 
-            IconButton(onClick = {
-                isReminderSet = !isReminderSet
-                prefs.edit().putBoolean(event.id, isReminderSet).apply()
+            IconButton(
+                onClick = {
+                    isReminderSet = !isReminderSet
+                    prefs.edit().putBoolean(event.id, isReminderSet).apply()
 
-                val agendaPrefs = context.getSharedPreferences("AgendaPrefs", Context.MODE_PRIVATE)
-                val savedEvents = agendaPrefs.getStringSet("agenda_events", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+                    val agendaPrefs = context.getSharedPreferences("AgendaPrefs", Context.MODE_PRIVATE)
+                    val savedEvents = agendaPrefs.getStringSet("agenda_events", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
 
-                if (isReminderSet) {
-                    savedEvents.add(Gson().toJson(event))
-                    scheduleNotification(context, event)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        activity.requestNotificationPermission()
+                    if (isReminderSet) {
+                        savedEvents.add(Gson().toJson(event))
+                        scheduleNotification(context, event)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            activity.requestNotificationPermission()
+                        }
+                    } else {
+                        savedEvents.remove(Gson().toJson(event))
                     }
-                } else {
-                    savedEvents.remove(Gson().toJson(event))
-                }
 
-                agendaPrefs.edit().putStringSet("agenda_events", savedEvents).apply()
-
-            }) {
+                    agendaPrefs.edit().putStringSet("agenda_events", savedEvents).apply()
+                },
+                modifier = Modifier.padding(8.dp)
+            ) {
                 Icon(
                     imageVector = if (isReminderSet) Icons.Filled.Notifications else Icons.Filled.NotificationsNone,
                     contentDescription = "Rappel",
@@ -124,10 +138,43 @@ fun EventDetailScreen(event: Event, activity: EventDetailActivity) {
             }
         }
 
-        Text(text = event.title, fontSize = 30.sp, fontWeight = FontWeight.Bold)
-        Text(text = event.date, fontSize = 20.sp)
-        Text(text = event.location, fontSize = 20.sp)
-        Text(text = event.description, fontSize = 16.sp)
+        // Event details section
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .shadow(2.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = event.title,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF4CAF50),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Text(
+                text = "📅 Date : ${event.date}",
+                fontSize = 18.sp,
+                color = Color(0xFF555555)
+            )
+
+            Text(
+                text = "📍 Lieu : ${event.location}",
+                fontSize = 18.sp,
+                color = Color(0xFF555555)
+            )
+
+            Text(
+                text = event.description,
+                fontSize = 16.sp,
+                color = Color.Gray,
+                lineHeight = 22.sp,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
     }
 }
 

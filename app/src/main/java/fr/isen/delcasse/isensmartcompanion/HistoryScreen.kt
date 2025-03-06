@@ -60,7 +60,7 @@ fun HistoryItem(userInteraction: Interaction, aiInteraction: Interaction, onDele
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xC8E8A892))
+        colors = CardDefaults.cardColors(containerColor = Color(0xE1FD764C))
     ) {
         Column(modifier = Modifier.padding(8.dp)) {
             Text(text = "👤 ${userInteraction.sender}", fontWeight = FontWeight.Bold)

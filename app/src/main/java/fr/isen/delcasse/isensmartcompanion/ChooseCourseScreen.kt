@@ -12,10 +12,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -37,8 +37,12 @@ fun ChooseCourseScreen(navController: NavHostController) {
 
     // Charger les cours enregistrés au démarrage
     LaunchedEffect(Unit) {
-        val savedCourses = prefs.getStringSet("selected_courses", emptySet()) ?: emptySet()
-        selectedCourses.addAll(savedCourses)
+        val savedCourses = prefs.all.keys.filter { it.startsWith("cours_") }
+        savedCourses.forEach { key ->
+            prefs.getString(key, null)?.let { json ->
+                selectedCourses.add(json)
+            }
+        }
     }
 
     Column(
@@ -54,19 +58,21 @@ fun ChooseCourseScreen(navController: NavHostController) {
         )
 
         LazyColumn(
-            modifier = Modifier.weight(1f) // Permet à la liste de prendre toute la place restante
+            modifier = Modifier.weight(1f)
         ) {
             items(courses) { course ->
-                val isSelected = selectedCourses.contains(course.title)
+                val jsonCourse = Gson().toJson(course)
+                val isSelected = selectedCourses.contains(jsonCourse)
+
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
                         .clickable {
                             if (isSelected) {
-                                selectedCourses.remove(course.title)
+                                selectedCourses.remove(jsonCourse)
                             } else {
-                                selectedCourses.add(course.title)
+                                selectedCourses.add(jsonCourse)
                             }
                         },
                     elevation = CardDefaults.cardElevation(4.dp),
@@ -98,9 +104,9 @@ fun ChooseCourseScreen(navController: NavHostController) {
                                 checked = isSelected,
                                 onCheckedChange = {
                                     if (isSelected) {
-                                        selectedCourses.remove(course.title)
+                                        selectedCourses.remove(jsonCourse)
                                     } else {
-                                        selectedCourses.add(course.title)
+                                        selectedCourses.add(jsonCourse)
                                     }
                                 }
                             )
@@ -113,9 +119,18 @@ fun ChooseCourseScreen(navController: NavHostController) {
 
         Button(
             onClick = {
-                prefs.edit()
-                    .putStringSet("selected_courses", selectedCourses.toSet())
-                    .apply()
+                val editor = prefs.edit()
+                // Efface toutes les données avant de sauvegarder
+                prefs.all.keys.filter { it.startsWith("cours_") }.forEach { key ->
+                    editor.remove(key)
+                }
+
+                // Sauvegarde des cours sélectionnés
+                selectedCourses.forEach { json ->
+                    val course = Gson().fromJson(json, Course::class.java)
+                    editor.putString("cours_${course.title}", json)
+                }
+                editor.apply()
 
                 Toast.makeText(context, "Cours enregistrés ✅", Toast.LENGTH_SHORT).show()
 
