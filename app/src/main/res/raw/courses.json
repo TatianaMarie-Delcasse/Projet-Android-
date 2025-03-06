@@ -1,0 +1,11 @@
+[
+  {"title": "Statistique", "day": "Lundi", "startTime": "08:00", "endTime": "10:00", "location": "Salle 101"},
+  {"title": "Bio électicité", "day": "Lundi", "startTime": "14:00", "endTime": "16:00", "location": "Salle 303"},
+  {"title": "Physique", "day": "Mardi", "startTime": "10:00", "endTime": "12:00", "location": "Salle 202"},
+  {"title": "Stm32", "day": "Mardi", "startTime": "13:00", "endTime": "17:00", "location": "Salle 111"},
+  {"title": "Informatique", "day": "Mercredi", "startTime": "14:00", "endTime": "16:00", "location": "Salle 303"},
+  {"title": "Anglais", "day": "Mercredi", "startTime": "08:00", "endTime": "10:00", "location": "Salle 512"},
+  {"title": "Projet", "day": "Jeudi", "startTime": "08:00", "endTime": "12:00", "location": "Salle 559"},
+  {"title": "Electronique", "day": "Vendredi", "startTime": "8:00", "endTime": "12:00", "location": "Salle 303"},
+  {"title": "Edge AI", "day": "Vendredi", "startTime": "14:00", "endTime": "18:00", "location": "Salle 415"}
+]

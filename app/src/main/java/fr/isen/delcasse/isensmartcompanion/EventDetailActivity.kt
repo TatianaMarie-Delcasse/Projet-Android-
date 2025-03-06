@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -36,7 +37,7 @@ class EventDetailActivity : ComponentActivity() {
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (isGranted) {
-                // Permission accordée
+                Log.d("Permission", "Notification permission granted")
             }
         }
 
@@ -90,79 +91,43 @@ fun EventDetailScreen(event: Event, activity: EventDetailActivity) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Button(
-                onClick = { activity.finish() },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1C1A1A))
-            ) {
+            Button(onClick = { activity.finish() }) {
                 Icon(Icons.Filled.ArrowBack, contentDescription = "Retour")
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Retour aux événements")
+                Text("Retour")
             }
 
             IconButton(onClick = {
                 isReminderSet = !isReminderSet
                 prefs.edit().putBoolean(event.id, isReminderSet).apply()
 
+                val agendaPrefs = context.getSharedPreferences("AgendaPrefs", Context.MODE_PRIVATE)
+                val savedEvents = agendaPrefs.getStringSet("agenda_events", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+
                 if (isReminderSet) {
+                    savedEvents.add(Gson().toJson(event))
+                    scheduleNotification(context, event)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         activity.requestNotificationPermission()
                     }
-                    scheduleNotification(context, event)
+                } else {
+                    savedEvents.remove(Gson().toJson(event))
                 }
+
+                agendaPrefs.edit().putStringSet("agenda_events", savedEvents).apply()
+
             }) {
                 Icon(
                     imageVector = if (isReminderSet) Icons.Filled.Notifications else Icons.Filled.NotificationsNone,
-                    contentDescription = "Set Reminder",
-                    tint = if (isReminderSet) Color(0xFFC5050C) else Color.Gray,
-                    modifier = Modifier.size(35.dp)
+                    contentDescription = "Rappel",
+                    tint = if (isReminderSet) Color.Red else Color.Gray
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text(
-            text = event.title,
-            fontSize = 30.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFFFF9800)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFEEEEEE)),
-            elevation = CardDefaults.cardElevation(4.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Date:", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    Text(event.date, fontSize = 20.sp)
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Lieu:", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    Text(event.location, fontSize = 20.sp)
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Catégorie:", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    Text(event.category, fontSize = 20.sp)
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = event.description,
-            fontSize = 20.sp,
-            color = Color(0xFF0C0C0C)
-        )
+        Text(text = event.title, fontSize = 30.sp, fontWeight = FontWeight.Bold)
+        Text(text = event.date, fontSize = 20.sp)
+        Text(text = event.location, fontSize = 20.sp)
+        Text(text = event.description, fontSize = 16.sp)
     }
 }
 
@@ -170,10 +135,10 @@ fun scheduleNotification(context: Context, event: Event) {
     val workManager = WorkManager.getInstance(context)
     val data = workDataOf("event_title" to event.title)
 
-    val notificationRequest = OneTimeWorkRequestBuilder<ReminderWorker>()
+    val request = OneTimeWorkRequestBuilder<ReminderWorker>()
         .setInitialDelay(10, TimeUnit.SECONDS)
         .setInputData(data)
         .build()
 
-    workManager.enqueue(notificationRequest)
+    workManager.enqueue(request)
 }

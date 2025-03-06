@@ -17,7 +17,7 @@ interface InteractionDao {
     fun getAllInteractions(): Flow<List<Interaction>>
 
     @Insert
-    fun insertInteraction(interactions: Interaction)
+    suspend fun insertInteraction(interactions: Interaction)
 
     @Delete
     fun deleteInteraction(interaction: Interaction)

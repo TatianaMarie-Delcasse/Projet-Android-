@@ -1,5 +1,6 @@
 package fr.isen.delcasse.isensmartcompanion
 
+import fr.isen.delcasse.isensmartcompanion.AgendaScreen
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,6 +18,7 @@ import fr.isen.delcasse.isensmartcompanion.data.Interaction
 import android.content.Context
 import androidx.room.Room
 import fr.isen.delcasse.isensmartcompanion.data.Event
+import fr.isen.delcasse.isensmartcompanion.ChooseCourseScreen
 
 
 @Composable
@@ -55,28 +57,17 @@ fun NavigationGraph(
     interactionDao: InteractionDao
 ) {
     val context = LocalContext.current
-    val eventList by interactionDao.getAllInteractions().collectAsState(initial = emptyList())
+    val db = AppDatabase.getDatabase(context)
 
     NavHost(navController, startDestination = "home", modifier = modifier) {
-        composable("home") { AssistantUI(interactionDao = interactionDao) }
+        composable("home") { AssistantUI(interactionDao) }
         composable("events") { EventsScreen(navController) }
         composable("history") { HistoryScreen(interactionDao) }
-        composable("agenda") {
-            val eventsWithReminders = getEventsWithReminders(context, eventList)
-            val eventItems = eventList.map {
-                Event(it.message, date = "Date ici", location = "Lieu ici")
-            }
-
-            val allItems = eventItems + eventsWithReminders.map {
-                Event(it.message, date = "Date ici", location = "Lieu ici")
-            }
-
-            val db = Room.databaseBuilder(context, AppDatabase::class.java, "db_name").build()
-            AgendaScreen(allItems, db = db)
-
-
+        composable(route = "agenda") { AgendaScreen(navController) }
+        composable("chooseCourses") {
+            ChooseCourseScreen(navController)
         }
-
+        composable("calendar") { CalendarScreen(navController) }
     }
 }
 
